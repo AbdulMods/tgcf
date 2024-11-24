@@ -1,17 +1,34 @@
-FROM python:3.10
+FROM python:3.10-slim
+
+# Environment variables
 ENV VENV_PATH="/venv"
 ENV PATH="$VENV_PATH/bin:$PATH"
+
+# Set working directory
 WORKDIR /app
+
+# Install required packages
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends apt-utils && \
-    apt-get upgrade -y && \
-    apt-get install ffmpeg tesseract-ocr -y && \
-    apt-get autoclean
+    apt-get install -y --no-install-recommends apt-utils ffmpeg tesseract-ocr && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# Install Poetry
 RUN pip install --upgrade poetry
-RUN python -m venv /venv
+
+# Set up Python virtual environment
+RUN python -m venv $VENV_PATH
+
+# Copy application files
 COPY . .
+
+# Build and install the app
 RUN poetry build && \
-    /venv/bin/pip install --upgrade pip wheel setuptools &&\
-    /venv/bin/pip install dist/*.whl
+    $VENV_PATH/bin/pip install --upgrade pip wheel setuptools && \
+    $VENV_PATH/bin/pip install dist/*.whl
+
+# Expose port
 EXPOSE 8501
-CMD tgcf-web
+
+# Start the application
+CMD ["tgcf-web"]
